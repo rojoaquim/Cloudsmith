@@ -883,7 +883,7 @@ Instruções do usuário: ${prompt || 'Forneça uma análise de segurança e opt
             {/* Right side: Generated Code View and AI assistant - takes 7 cols */}
             <div className="lg:col-span-7 flex flex-col space-y-5">
               {/* Main Code View Box */}
-              <div className="bg-[#0D1117] border border-[#2D333B] rounded-xl overflow-hidden flex flex-col flex-1 min-h-0" id="block-generated-code">
+              <div className="bg-[#0D1117] border border-[#2D333B] rounded-xl overflow-hidden flex flex-col h-[800px]" id="block-generated-code">
                 <div className="bg-[#161B22] px-4 py-3 border-b border-[#2D333B] flex items-center justify-between">
                   <div className="flex items-center gap-2">
                     <Code className="w-4 h-4 text-blue-400" />
