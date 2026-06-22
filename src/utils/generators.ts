@@ -41,6 +41,10 @@ export function generateTerraform(state: GeneratorState): string {
   const { provider, environment, projectPrefix, tags, resources } = state;
   const prefix = projectPrefix ? `${projectPrefix}-${environment}` : environment;
 
+  const terraformTagLines = tags
+    .map((t) => `    "${t.key}" = "${t.value}"`)
+    .join('\n');
+
   let code = `# ==============================================================================
 # TEMPLATE DE INFRAESTRUTURA COMO CODIGO (IAC) - TERRAFORM
 # Provedor: ${provider.toUpperCase()} | Ambiente: ${environment.toUpperCase()}
@@ -54,7 +58,7 @@ locals {
   common_tags = {
     "Env"       = "${environment}"
     "Project"   = "${projectPrefix || 'iac-generator'}"
-    "ManagedBy" = "IaCGenerator"
+    "ManagedBy" = "IaCGenerator"${terraformTagLines ? '\n' + terraformTagLines : ''}
   }
 }
 

@@ -5,6 +5,13 @@
 
 import { CascadingOptions } from '../types';
 
+export const providerInstanceTypes: Record<string, string[]> = {
+  aws: ['t3.micro', 't3.small', 't3.medium', 't3.large', 'm5.large', 'm5.xlarge', 'c5.large'],
+  azure: ['Standard_B1s', 'Standard_B2s', 'Standard_D2s_v5', 'Standard_D4s_v5', 'Standard_F2s_v2'],
+  gcp: ['e2-micro', 'e2-small', 'e2-medium', 'n2-standard-2', 'n2-standard-4', 'c2-standard-4'],
+  oci: ['VM.Standard.E4.Flex', 'VM.Standard.E3.Flex', 'VM.Standard2.1', 'VM.Standard2.2']
+};
+
 export const iacCascadingSchema: CascadingOptions[] = [
   {
     tool: 'terraform',

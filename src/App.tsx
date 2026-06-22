@@ -24,7 +24,7 @@ import {
 
 import { GeneratorState, IaCTool, CloudProvider, Environment, Tag } from './types';
 import { generateTerraform, generateCloudFormation } from './utils/generators';
-import { iacCascadingSchema } from './utils/dynamicOptions';
+import { iacCascadingSchema, providerInstanceTypes } from './utils/dynamicOptions';
 import TagManager from './components/TagManager';
 import DocTabs from './components/DocTabs';
 
@@ -34,8 +34,29 @@ const INITIAL_STATE: GeneratorState = {
   environment: 'dev',
   projectPrefix: 'enterprise',
   tags: [
-    { key: 'Owner', value: 'SRE-Team' },
-    { key: 'Department', value: 'Engineering' }
+    { key: 'SKU_BEFORE', value: '' },
+    { key: 'SKU_AFTER', value: '' },
+    { key: 'ENVIRONMENT', value: '' },
+    { key: 'COMPANY', value: '' },
+    { key: 'BACKUP_ACTIVE', value: '' },
+    { key: 'CRITICAL', value: '' },
+    { key: 'FINOPS', value: '' },
+    { key: 'MANAGER', value: '' },
+    { key: 'STATUS', value: '' },
+    { key: 'TOWER', value: '' },
+    { key: 'BUSINESS_UNIT', value: '' },
+    { key: 'OWNED_BY', value: '' },
+    { key: 'PROJECT', value: '' },
+    { key: 'APPLICATION', value: '' },
+    { key: 'PATCH_ACTIVE', value: '' },
+    { key: 'START_DATE', value: '' },
+    { key: 'END_DATE', value: '' },
+    { key: 'SEC_HARDENED', value: '' },
+    { key: 'PATCH_ENABLE', value: '' },
+    { key: 'MONITORING', value: '' },
+    { key: 'ILLUMIO_APP', value: '' },
+    { key: 'ILLUMIO_TYPE', value: '' },
+    { key: 'INFORMATION_CLASS', value: '' }
   ],
   resources: {
     vpc: {
@@ -388,43 +409,19 @@ Instruções do usuário: ${prompt || 'Forneça uma análise de segurança e opt
                       </span>
                     )}
                   </div>
-                  <div className="space-y-2">
-                    {(['aws', 'azure', 'gcp', 'oci'] as CloudProvider[]).map((prov) => {
-                      const isLocked = state.tool === 'cloudformation' && prov !== 'aws';
-                      const isSelected = state.provider === prov;
-                      
-                      const labelMap: Record<CloudProvider, string> = {
-                        aws: 'Amazon Web Services',
-                        azure: 'Microsoft Azure',
-                        gcp: 'Google Cloud Platform',
-                        oci: 'Oracle Cloud Infrastructure'
-                      };
-
-                      return (
-                        <div
-                          key={prov}
-                          onClick={() => !isLocked && handleProviderChange(prov)}
-                          className={`flex items-center justify-between p-3 border rounded-md cursor-pointer transition-all ${
-                            isSelected
-                              ? 'bg-blue-500/5 border-blue-500/30 text-white'
-                              : isLocked
-                              ? 'bg-[#161B22]/40 border-[#2D333B]/50 text-slate-600 cursor-not-allowed opacity-40 line-through'
-                              : 'border-[#2D333B] text-slate-400 hover:bg-[#1C2128]'
-                          }`}
-                          id={`provider-btn-${prov}`}
-                        >
-                          <div className="flex items-center gap-3">
-                            <div className={`w-4 h-4 rounded-full border flex items-center justify-center ${
-                              isSelected ? 'border-blue-500' : 'border-slate-600'
-                            }`}>
-                              {isSelected && <div className="w-2.5 h-2.5 rounded-full bg-blue-500" />}
-                            </div>
-                            <span className="text-sm">{labelMap[prov]}</span>
-                          </div>
-                          {isLocked && <span className="text-[9px] text-slate-650 font-mono">(LOCKED)</span>}
-                        </div>
-                      );
-                    })}
+                  <div className="relative">
+                    <select
+                      value={state.provider}
+                      disabled={state.tool === 'cloudformation'}
+                      onChange={(e) => handleProviderChange(e.target.value as CloudProvider)}
+                      className="w-full text-xs px-3 py-2 bg-[#161B22] border border-[#2D333B] rounded-lg text-[#E0E2E7] focus:outline-none focus:border-blue-500 font-mono disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
+                      id="provider-select"
+                    >
+                      <option value="aws">Amazon Web Services (AWS)</option>
+                      <option value="azure">Microsoft Azure</option>
+                      <option value="gcp">Google Cloud Platform (GCP)</option>
+                      <option value="oci">Oracle Cloud Infrastructure (OCI)</option>
+                    </select>
                   </div>
                 </div>
               </div>
@@ -439,7 +436,120 @@ Instruções do usuário: ${prompt || 'Forneça uma análise de segurança e opt
                   <span className="px-2 py-0.5 rounded bg-green-500/10 text-green-400 text-[10px] border border-green-500/20 uppercase font-mono">Pronto</span>
                 </div>
 
-                {/* Resource 1: VPC */}
+                {/* Resource 1: Compute */}
+                <div className={`border p-3 rounded-lg space-y-3 transition-colors ${
+                  state.resources.compute.enabled ? 'border-blue-500/40 bg-blue-500/5' : 'border-[#2D333B] bg-[#161B22]/40'
+                }`} id="resource-opt-compute">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-2 text-xs font-semibold text-white">
+                      <Cpu className="w-3.5 h-3.5 text-blue-400" />
+                      <span>Computação / VM</span>
+                    </div>
+                    <label className="relative inline-flex items-center cursor-pointer">
+                      <input
+                        type="checkbox"
+                        checked={state.resources.compute.enabled}
+                        onChange={(e) =>
+                          setState((prev) => ({
+                            ...prev,
+                            resources: {
+                              ...prev.resources,
+                              compute: { ...prev.resources.compute, enabled: e.target.checked }
+                            }
+                          }))
+                        }
+                        className="sr-only peer"
+                        id="checkbox-compute-enabled"
+                      />
+                      <div className="w-8 h-4 bg-[#2D333B] rounded-full relative transition peer-checked:bg-blue-600 after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-slate-400 after:rounded-full after:h-3 after:w-3 after:transition-all peer-checked:after:translate-x-4 peer-checked:after:bg-white select-none"></div>
+                    </label>
+                  </div>
+
+                  {state.resources.compute.enabled && (
+                    <div className="space-y-3 pt-2 border-t border-[#2D333B]" id="compute-inner-params">
+                      <div className="grid grid-cols-2 gap-3">
+                        <div>
+                          <label className="text-[10px] text-slate-500 block mb-1 uppercase tracking-wider">Tipo de Instância</label>
+                          <select
+                            value={state.resources.compute.instanceType}
+                            onChange={(e) =>
+                              setState((prev) => ({
+                                ...prev,
+                                resources: {
+                                  ...prev.resources,
+                                  compute: { ...prev.resources.compute, instanceType: e.target.value }
+                                }
+                              }))
+                            }
+                            className="w-full text-xs px-2 py-1.5 bg-[#161B22] border border-[#2D333B] rounded text-[#E0E2E7] focus:border-blue-500 font-mono"
+                          >
+                            {(providerInstanceTypes[state.provider] || []).map((inst) => (
+                              <option key={inst} value={inst}>{inst}</option>
+                            ))}
+                          </select>
+                        </div>
+                        <div>
+                          <label className="text-[10px] text-slate-500 block mb-1 uppercase tracking-wider">Sistema Operacional</label>
+                          <select
+                            value={state.resources.compute.os}
+                            onChange={(e) =>
+                              setState((prev) => ({
+                                ...prev,
+                                resources: {
+                                  ...prev.resources,
+                                  compute: { ...prev.resources.compute, os: e.target.value as 'linux' | 'windows' }
+                                }
+                              }))
+                            }
+                            className="w-full text-xs px-2 py-1.5 bg-[#161B22] border border-[#2D333B] rounded text-[#E0E2E7] focus:border-blue-500 font-mono"
+                          >
+                            <option value="linux">Linux Server</option>
+                            <option value="windows">Windows Server</option>
+                          </select>
+                        </div>
+                      </div>
+
+                      <div className="flex gap-4 pt-1">
+                        <label className="flex items-center gap-1.5 text-[11px] text-slate-300 cursor-pointer">
+                          <input
+                            type="checkbox"
+                            checked={state.resources.compute.allowSSH}
+                            onChange={(e) =>
+                              setState((prev) => ({
+                                ...prev,
+                                resources: {
+                                  ...prev.resources,
+                                  compute: { ...prev.resources.compute, allowSSH: e.target.checked }
+                                }
+                              }))
+                            }
+                            className="rounded bg-[#161B22] border-[#2D333B] text-blue-500 focus:ring-0 w-3.5 h-3.5"
+                          />
+                          <span className="font-mono text-[10px]">SSH (Porta 22)</span>
+                        </label>
+                        <label className="flex items-center gap-1.5 text-[11px] text-slate-300 cursor-pointer">
+                          <input
+                            type="checkbox"
+                            checked={state.resources.compute.allowHTTP}
+                            onChange={(e) =>
+                              setState((prev) => ({
+                                ...prev,
+                                resources: {
+                                  ...prev.resources,
+                                  compute: { ...prev.resources.compute, allowHTTP: e.target.checked }
+                                }
+                              }))
+                            }
+                            className="rounded bg-[#161B22] border-[#2D333B] text-blue-500 focus:ring-0 w-3.5 h-3.5"
+                          />
+                          <span className="font-mono text-[10px]">Web (Porta 80/443)</span>
+                        </label>
+                      </div>
+                    </div>
+                  )}
+                </div>
+
+                {/* Resource 2: VPC */}
                 <div className={`border p-3 rounded-lg space-y-3 transition-colors ${
                   state.resources.vpc.enabled ? 'border-blue-500/40 bg-blue-500/5' : 'border-[#2D333B] bg-[#161B22]/40'
                 }`} id="resource-opt-vpc">
@@ -506,117 +616,6 @@ Instruções do usuário: ${prompt || 'Forneça uma análise de segurança e opt
                           <option value={2}>2 Subnets</option>
                           <option value={3}>3 Subnets</option>
                         </select>
-                      </div>
-                    </div>
-                  )}
-                </div>
-
-                {/* Resource 2: Compute */}
-                <div className={`border p-3 rounded-lg space-y-3 transition-colors ${
-                  state.resources.compute.enabled ? 'border-blue-500/40 bg-blue-500/5' : 'border-[#2D333B] bg-[#161B22]/40'
-                }`} id="resource-opt-compute">
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-2 text-xs font-semibold text-white">
-                      <Cpu className="w-3.5 h-3.5 text-blue-400" />
-                      <span>Computação / VM</span>
-                    </div>
-                    <label className="relative inline-flex items-center cursor-pointer">
-                      <input
-                        type="checkbox"
-                        checked={state.resources.compute.enabled}
-                        onChange={(e) =>
-                          setState((prev) => ({
-                            ...prev,
-                            resources: {
-                              ...prev.resources,
-                              compute: { ...prev.resources.compute, enabled: e.target.checked }
-                            }
-                          }))
-                        }
-                        className="sr-only peer"
-                        id="checkbox-compute-enabled"
-                      />
-                      <div className="w-8 h-4 bg-[#2D333B] rounded-full relative transition peer-checked:bg-blue-600 after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-slate-400 after:rounded-full after:h-3 after:w-3 after:transition-all peer-checked:after:translate-x-4 peer-checked:after:bg-white select-none"></div>
-                    </label>
-                  </div>
-
-                  {state.resources.compute.enabled && (
-                    <div className="space-y-3 pt-2 border-t border-[#2D333B]" id="compute-inner-params">
-                      <div className="grid grid-cols-2 gap-3">
-                        <div>
-                          <label className="text-[10px] text-slate-500 block mb-1 uppercase tracking-wider">Tipo de Instância</label>
-                          <input
-                            type="text"
-                            value={state.resources.compute.instanceType}
-                            onChange={(e) =>
-                              setState((prev) => ({
-                                ...prev,
-                                resources: {
-                                  ...prev.resources,
-                                  compute: { ...prev.resources.compute, instanceType: e.target.value }
-                                }
-                              }))
-                            }
-                            className="w-full text-xs px-2.5 py-1.5 bg-[#161B22] border border-[#2D333B] rounded text-[#E0E2E7] font-mono focus:border-blue-500"
-                            placeholder="t3.micro"
-                          />
-                        </div>
-                        <div>
-                          <label className="text-[10px] text-slate-500 block mb-1 uppercase tracking-wider">Sistema Operacional</label>
-                          <select
-                            value={state.resources.compute.os}
-                            onChange={(e) =>
-                              setState((prev) => ({
-                                ...prev,
-                                resources: {
-                                  ...prev.resources,
-                                  compute: { ...prev.resources.compute, os: e.target.value as 'linux' | 'windows' }
-                                }
-                              }))
-                            }
-                            className="w-full text-xs px-2 py-1.5 bg-[#161B22] border border-[#2D333B] rounded text-[#E0E2E7] focus:border-blue-500 font-mono"
-                          >
-                            <option value="linux">Linux Server</option>
-                            <option value="windows">Windows Server</option>
-                          </select>
-                        </div>
-                      </div>
-
-                      <div className="flex gap-4 pt-1">
-                        <label className="flex items-center gap-1.5 text-[11px] text-slate-300 cursor-pointer">
-                          <input
-                            type="checkbox"
-                            checked={state.resources.compute.allowSSH}
-                            onChange={(e) =>
-                              setState((prev) => ({
-                                ...prev,
-                                resources: {
-                                  ...prev.resources,
-                                  compute: { ...prev.resources.compute, allowSSH: e.target.checked }
-                                }
-                              }))
-                            }
-                            className="rounded bg-[#161B22] border-[#2D333B] text-blue-500 focus:ring-0 w-3.5 h-3.5"
-                          />
-                          <span className="font-mono text-[10px]">SSH (Porta 22)</span>
-                        </label>
-                        <label className="flex items-center gap-1.5 text-[11px] text-slate-300 cursor-pointer">
-                          <input
-                            type="checkbox"
-                            checked={state.resources.compute.allowHTTP}
-                            onChange={(e) =>
-                              setState((prev) => ({
-                                ...prev,
-                                resources: {
-                                  ...prev.resources,
-                                  compute: { ...prev.resources.compute, allowHTTP: e.target.checked }
-                                }
-                              }))
-                            }
-                            className="rounded bg-[#161B22] border-[#2D333B] text-blue-500 focus:ring-0 w-3.5 h-3.5"
-                          />
-                          <span className="font-mono text-[10px]">Web (Porta 80/443)</span>
-                        </label>
                       </div>
                     </div>
                   )}

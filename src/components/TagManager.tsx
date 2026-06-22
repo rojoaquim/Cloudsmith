@@ -37,6 +37,11 @@ export default function TagManager({ tags, onChange }: TagManagerProps) {
     onChange(updated);
   };
 
+  const handleUpdateTagValue = (index: number, value: string) => {
+    const updated = tags.map((tag, i) => (i === index ? { ...tag, value } : tag));
+    onChange(updated);
+  };
+
   return (
     <div className="space-y-4" id="tag-manager-container">
       <div className="flex items-center gap-2 mb-2">
@@ -76,17 +81,23 @@ export default function TagManager({ tags, onChange }: TagManagerProps) {
       </form>
 
       {tags.length > 0 ? (
-        <div className="max-h-32 overflow-y-auto border border-[#2D333B] rounded bg-[#0D1117] p-2 space-y-1.5" id="tags-list">
+        <div className="max-h-80 overflow-y-auto border border-[#2D333B] rounded bg-[#0D1117] p-2 space-y-1.5" id="tags-list">
           {tags.map((tag, index) => (
-            <div key={index} className="flex justify-between items-center bg-[#161B22] px-3 py-1.5 rounded border border-[#2D333B] text-xs">
-              <div className="flex items-center gap-2 min-w-0">
-                <span className="font-mono text-blue-400 truncate">{tag.key}:</span>
-                <span className="text-slate-300 truncate font-mono">{tag.value || <em className="text-slate-600">vazio</em>}</span>
+            <div key={index} className="flex items-center justify-between bg-[#161B22] px-3 py-1.5 rounded border border-[#2D333B] text-xs gap-2">
+              <div className="flex items-center gap-2 flex-1 min-w-0">
+                <span className="font-mono text-blue-400 font-semibold select-none min-w-[130px] sm:min-w-[150px] truncate">{tag.key}:</span>
+                <input
+                  type="text"
+                  value={tag.value}
+                  onChange={(e) => handleUpdateTagValue(index, e.target.value)}
+                  className="flex-1 text-xs px-2 py-0.5 bg-[#0D1117] border border-[#2D333B] rounded text-[#E0E2E7] placeholder-slate-600 focus:outline-none focus:border-blue-500 font-mono"
+                  placeholder="Valor..."
+                />
               </div>
               <button
                 type="button"
                 onClick={() => handleRemoveTag(index)}
-                className="text-slate-400 hover:text-red-400 p-1 rounded hover:bg-slate-800 transition"
+                className="text-slate-400 hover:text-red-400 p-1 rounded hover:bg-slate-800 transition flex-shrink-0"
                 title="Excluir Tag"
               >
                 <Trash2 className="w-3.5 h-3.5" />
