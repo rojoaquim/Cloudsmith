@@ -883,7 +883,7 @@ Instruções do usuário: ${prompt || 'Forneça uma análise de segurança e opt
             {/* Right side: Generated Code View and AI assistant - takes 7 cols */}
             <div className="lg:col-span-7 flex flex-col space-y-5">
               {/* Main Code View Box */}
-              <div className="bg-[#0D1117] border border-[#2D333B] rounded-xl overflow-hidden flex flex-col flex-1" id="block-generated-code">
+              <div className="bg-[#0D1117] border border-[#2D333B] rounded-xl overflow-hidden flex flex-col h-[600px]" id="block-generated-code">
                 <div className="bg-[#161B22] px-4 py-3 border-b border-[#2D333B] flex items-center justify-between">
                   <div className="flex items-center gap-2">
                     <Code className="w-4 h-4 text-blue-400" />
@@ -915,7 +915,7 @@ Instruções do usuário: ${prompt || 'Forneça uma análise de segurança e opt
                 </div>
 
                 {/* Custom formatted highlighted display pane */}
-                <div className="bg-[#010409] p-4 font-mono text-[11px] leading-relaxed overflow-auto flex-1 min-h-[400px] max-h-[600px] border border-[#2D333B]/30 rounded">
+                <div className="bg-[#010409] p-4 font-mono text-[11px] leading-relaxed overflow-auto flex-1 border border-[#2D333B]/30 rounded">
                   <pre className="text-blue-300">
                     <code>{generatedCode}</code>
                   </pre>

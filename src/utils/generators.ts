@@ -132,11 +132,6 @@ export function generateTerraform(state: GeneratorState): string {
 locals {
   project_prefix = "${prefix}"
   environment    = "${environment}"
-  common_tags = {
-    "Env"       = "${environment}"
-    "Project"   = "${projectPrefix || 'iac-generator'}"
-    "ManagedBy" = "IaCGenerator"${terraformTagLines ? '\n' + terraformTagLines : ''}
-  }
 }
 
 # Configuração de Provedor e Requisitos de Versão
@@ -151,116 +146,6 @@ provider "${getProviderName(provider)}" {
 ${getProviderConfigBlock(provider)}
 }
 `;
-
-  // 1. VPC CONFIGURATION
-  if (resources.vpc.enabled) {
-    code += `
-# ==========================================
-# RECURSOS DE REDE (VPC / VIRTUAL NETWORK)
-# ==========================================
-`;
-    if (provider === 'aws') {
-      code += `resource "aws_vpc" "main" {
-  cidr_block           = "${resources.vpc.cidr}"
-  enable_dns_hostnames = ${resources.vpc.enableDns}
-  enable_dns_support   = true
-
-  tags = merge(local.common_tags, {
-    Name = "\${local.project_prefix}-vpc"
-  })
-}
-
-resource "aws_subnet" "public" {
-  count                   = ${resources.vpc.subnetsCount}
-  vpc_id                  = aws_vpc.main.id
-  cidr_block              = cidrsubnet(aws_vpc.main.cidr_block, 4, count.index)
-  map_public_ip_on_launch = true
-
-  tags = merge(local.common_tags, {
-    Name = "\${local.project_prefix}-subnet-public-\${count.index}"
-  })
-}
-
-resource "aws_internet_gateway" "igw" {
-  vpc_id = aws_vpc.main.id
-
-  tags = merge(local.common_tags, {
-    Name = "\${local.project_prefix}-igw"
-  })
-}
-
-resource "aws_route_table" "public" {
-  vpc_id = aws_vpc.main.id
-
-  route {
-    cidr_block = "0.0.0.0/0"
-    gateway_id = aws_internet_gateway.igw.id
-  }
-
-  tags = merge(local.common_tags, {
-    Name = "\${local.project_prefix}-rt-public"
-  })
-}
-
-resource "aws_route_table_association" "public" {
-  count          = ${resources.vpc.subnetsCount}
-  subnet_id      = aws_subnet.public[count.index].id
-  route_table_id = aws_route_table.public.id
-}
-`;
-    } else if (provider === 'azure') {
-      code += `resource "azurerm_resource_group" "rg" {
-  name     = "\${local.project_prefix}-rg"
-  location = "eastus2"
-  tags     = local.common_tags
-}
-
-resource "azurerm_virtual_network" "vnet" {
-  name                = "\${local.project_prefix}-vnet"
-  address_space       = ["${resources.vpc.cidr}"]
-  location            = azurerm_resource_group.rg.location
-  resource_group_name = azurerm_resource_group.rg.name
-  tags                = local.common_tags
-}
-
-resource "azurerm_subnet" "subnet" {
-  name                 = "\${local.project_prefix}-subnet-0"
-  resource_group_name  = azurerm_resource_group.rg.name
-  virtual_network_name = azurerm_virtual_network.vnet.name
-  address_prefixes     = [cidrsubnet("${resources.vpc.cidr}", 8, 1)]
-}
-`;
-    } else if (provider === 'gcp') {
-      code += `resource "google_compute_network" "vpc_network" {
-  name                    = "\${local.project_prefix}-vpc"
-  auto_create_subnetworks = false
-}
-
-resource "google_compute_subnetwork" "subnet" {
-  name          = "\${local.project_prefix}-subnet"
-  ip_cidr_range = "${resources.vpc.cidr}"
-  region        = "us-central1"
-  network       = google_compute_network.vpc_network.id
-}
-`;
-    } else if (provider === 'oci') {
-      code += `resource "oci_core_vcn" "vcn" {
-  cidr_block     = "${resources.vpc.cidr}"
-  compartment_id = var.compartment_ocid
-  display_name   = "\${local.project_prefix}-vcn"
-  dns_label      = "${projectPrefix ? projectPrefix.substring(0, 10).replace(/[^a-zA-Z0-9]/g, '') : 'subnet'}"
-}
-
-resource "oci_core_subnet" "subnet" {
-  cidr_block     = cidrsubnet("${resources.vpc.cidr}", 8, 1)
-  compartment_id = var.compartment_ocid
-  vcn_id         = oci_core_vcn.vcn.id
-  display_name   = "\${local.project_prefix}-sub"
-  dns_label      = "sublbl"
-}
-`;
-    }
-  }
 
   // 2. COMPUTE CONFIGURATION
   if (resources.compute.enabled) {
@@ -490,6 +375,116 @@ resource "google_compute_firewall" "rules" {
     }
   }
 
+  // 1. VPC CONFIGURATION
+  if (resources.vpc.enabled) {
+    code += `
+# ==========================================
+# RECURSOS DE REDE (VPC / VIRTUAL NETWORK)
+# ==========================================
+`;
+    if (provider === 'aws') {
+      code += `resource "aws_vpc" "main" {
+  cidr_block           = "${resources.vpc.cidr}"
+  enable_dns_hostnames = ${resources.vpc.enableDns}
+  enable_dns_support   = true
+
+  tags = merge(local.common_tags, {
+    Name = "\${local.project_prefix}-vpc"
+  })
+}
+
+resource "aws_subnet" "public" {
+  count                   = ${resources.vpc.subnetsCount}
+  vpc_id                  = aws_vpc.main.id
+  cidr_block              = cidrsubnet(aws_vpc.main.cidr_block, 4, count.index)
+  map_public_ip_on_launch = true
+
+  tags = merge(local.common_tags, {
+    Name = "\${local.project_prefix}-subnet-public-\${count.index}"
+  })
+}
+
+resource "aws_internet_gateway" "igw" {
+  vpc_id = aws_vpc.main.id
+
+  tags = merge(local.common_tags, {
+    Name = "\${local.project_prefix}-igw"
+  })
+}
+
+resource "aws_route_table" "public" {
+  vpc_id = aws_vpc.main.id
+
+  route {
+    cidr_block = "0.0.0.0/0"
+    gateway_id = aws_internet_gateway.igw.id
+  }
+
+  tags = merge(local.common_tags, {
+    Name = "\${local.project_prefix}-rt-public"
+  })
+}
+
+resource "aws_route_table_association" "public" {
+  count          = ${resources.vpc.subnetsCount}
+  subnet_id      = aws_subnet.public[count.index].id
+  route_table_id = aws_route_table.public.id
+}
+`;
+    } else if (provider === 'azure') {
+      code += `resource "azurerm_resource_group" "rg" {
+  name     = "\${local.project_prefix}-rg"
+  location = "eastus2"
+  tags     = local.common_tags
+}
+
+resource "azurerm_virtual_network" "vnet" {
+  name                = "\${local.project_prefix}-vnet"
+  address_space       = ["${resources.vpc.cidr}"]
+  location            = azurerm_resource_group.rg.location
+  resource_group_name = azurerm_resource_group.rg.name
+  tags                = local.common_tags
+}
+
+resource "azurerm_subnet" "subnet" {
+  name                 = "\${local.project_prefix}-subnet-0"
+  resource_group_name  = azurerm_resource_group.rg.name
+  virtual_network_name = azurerm_virtual_network.vnet.name
+  address_prefixes     = [cidrsubnet("${resources.vpc.cidr}", 8, 1)]
+}
+`;
+    } else if (provider === 'gcp') {
+      code += `resource "google_compute_network" "vpc_network" {
+  name                    = "\${local.project_prefix}-vpc"
+  auto_create_subnetworks = false
+}
+
+resource "google_compute_subnetwork" "subnet" {
+  name          = "\${local.project_prefix}-subnet"
+  ip_cidr_range = "${resources.vpc.cidr}"
+  region        = "us-central1"
+  network       = google_compute_network.vpc_network.id
+}
+`;
+    } else if (provider === 'oci') {
+      code += `resource "oci_core_vcn" "vcn" {
+  cidr_block     = "${resources.vpc.cidr}"
+  compartment_id = var.compartment_ocid
+  display_name   = "\${local.project_prefix}-vcn"
+  dns_label      = "${projectPrefix ? projectPrefix.substring(0, 10).replace(/[^a-zA-Z0-9]/g, '') : 'subnet'}"
+}
+
+resource "oci_core_subnet" "subnet" {
+  cidr_block     = cidrsubnet("${resources.vpc.cidr}", 8, 1)
+  compartment_id = var.compartment_ocid
+  vcn_id         = oci_core_vcn.vcn.id
+  display_name   = "\${local.project_prefix}-sub"
+  dns_label      = "sublbl"
+}
+`;
+    }
+  }
+
   // 3. STORAGE CONFIGURATION
   if (resources.storage.enabled) {
     code += `
@@ -684,20 +679,24 @@ resource "aws_db_instance" "db" {
     }
   }
 
-  // Append user custom tags (formatted at the very end as outputs or notes)
-  if (tags.length > 0) {
-    code += `
+  // Definição final das tags globais e outputs
+  code += `
 # ==========================================
-# OUTPUTS E META-TAGS ADICIONADAS
+# TAGS GLOBAIS E OUTPUTS
 # ==========================================
-output "custom_tags_applied" {
-  description = "Lista de Tags customizadas configuradas pelo Cloudsmith"
-  value       = {
-${tags.map((t) => `    "${t.key}" = "${t.value}"`).join('\n')}
+locals {
+  common_tags = {
+    "Env"       = "${environment}"
+    "Project"   = "${projectPrefix || 'iac-generator'}"
+    "ManagedBy" = "IaCGenerator"${terraformTagLines ? '\n' + terraformTagLines : ''}
   }
 }
+
+output "custom_tags_applied" {
+  description = "Lista de Tags aplicadas pelo Cloudsmith"
+  value       = local.common_tags
+}
 `;
-  }
 
   return code;
 }
@@ -731,57 +730,6 @@ Parameters:
 
 Resources:
 `;
-
-  // 1. VPC CONFIGURATION
-  if (resources.vpc.enabled) {
-    code += `
-# ==========================================
-# RECURSOS DE INFRAESTRUTURA DE REDE (VPC)
-# ==========================================
-  VPC:
-    Type: AWS::EC2::VPC
-    Properties:
-      CidrBlock: ${resources.vpc.cidr}
-      EnableDnsHostnames: ${resources.vpc.enableDns}
-      EnableDnsSupport: true${formatTags(tags, 'cloudformation')}
-
-  PublicSubnet:
-    Type: AWS::EC2::Subnet
-    Properties:
-      VpcId: !Ref VPC
-      CidrBlock: !Select [ 0, !Cidr [ !GetAtt VPC.CidrBlock, ${resources.vpc.subnetsCount}, 8 ] ]
-      MapPublicIpOnLaunch: true${formatTags(tags.concat([{ key: 'Name', value: `${prefix}-public-subnet` }]), 'cloudformation')}
-
-  InternetGateway:
-    Type: AWS::EC2::InternetGateway
-    Properties:${formatTags(tags.concat([{ key: 'Name', value: `${prefix}-igw` }]), 'cloudformation')}
-
-  VPCGatewayAttachment:
-    Type: AWS::EC2::VPCGatewayAttachment
-    Properties:
-      VpcId: !Ref VPC
-      InternetGatewayId: !Ref InternetGateway
-
-  RouteTable:
-    Type: AWS::EC2::RouteTable
-    Properties:
-      VpcId: !Ref VPC${formatTags(tags.concat([{ key: 'Name', value: `${prefix}-public-rt` }]), 'cloudformation')}
-
-  DefaultRoute:
-    Type: AWS::EC2::Route
-    DependsOn: VPCGatewayAttachment
-    Properties:
-      RouteTableId: !Ref RouteTable
-      DestinationCidrBlock: 0.0.0.0/0
-      InternetGatewayId: !Ref InternetGateway
-
-  SubnetRouteTableAssociation:
-    Type: AWS::EC2::SubnetRouteTableAssociation
-    Properties:
-      SubnetId: !Ref PublicSubnet
-      RouteTableId: !Ref RouteTable
-`;
-  }
 
   // 2. COMPUTE CONFIGURATION
   if (resources.compute.enabled) {
@@ -821,7 +769,7 @@ Resources:
         - IpProtocol: -1
           CidrIp: 0.0.0.0/0
           Description: Todo trafego de saida permitido
-
+ 
   EC2Instance:
     Type: AWS::EC2::Instance
     Properties:
@@ -836,6 +784,57 @@ Resources:
             VolumeSize: ${resources.compute.os === 'linux' ? '20' : '65'}
             VolumeType: gp3
             Encrypted: true${formatTags(tags.concat([{ key: 'Name', value: `${prefix}-web-ec2` }]), 'cloudformation')}
+`;
+  }
+
+  // 1. VPC CONFIGURATION
+  if (resources.vpc.enabled) {
+    code += `
+# ==========================================
+# RECURSOS DE INFRAESTRUTURA DE REDE (VPC)
+# ==========================================
+  VPC:
+    Type: AWS::EC2::VPC
+    Properties:
+      CidrBlock: ${resources.vpc.cidr}
+      EnableDnsHostnames: ${resources.vpc.enableDns}
+      EnableDnsSupport: true${formatTags(tags, 'cloudformation')}
+ 
+  PublicSubnet:
+    Type: AWS::EC2::Subnet
+    Properties:
+      VpcId: !Ref VPC
+      CidrBlock: !Select [ 0, !Cidr [ !GetAtt VPC.CidrBlock, ${resources.vpc.subnetsCount}, 8 ] ]
+      MapPublicIpOnLaunch: true${formatTags(tags.concat([{ key: 'Name', value: `${prefix}-public-subnet` }]), 'cloudformation')}
+ 
+  InternetGateway:
+    Type: AWS::EC2::InternetGateway
+    Properties:${formatTags(tags.concat([{ key: 'Name', value: `${prefix}-igw` }]), 'cloudformation')}
+ 
+  VPCGatewayAttachment:
+    Type: AWS::EC2::VPCGatewayAttachment
+    Properties:
+      VpcId: !Ref VPC
+      InternetGatewayId: !Ref InternetGateway
+ 
+  RouteTable:
+    Type: AWS::EC2::RouteTable
+    Properties:
+      VpcId: !Ref VPC${formatTags(tags.concat([{ key: 'Name', value: `${prefix}-public-rt` }]), 'cloudformation')}
+ 
+  DefaultRoute:
+    Type: AWS::EC2::Route
+    DependsOn: VPCGatewayAttachment
+    Properties:
+      RouteTableId: !Ref RouteTable
+      DestinationCidrBlock: 0.0.0.0/0
+      InternetGatewayId: !Ref InternetGateway
+ 
+  SubnetRouteTableAssociation:
+    Type: AWS::EC2::SubnetRouteTableAssociation
+    Properties:
+      SubnetId: !Ref PublicSubnet
+      RouteTableId: !Ref RouteTable
 `;
   }
 
@@ -922,6 +921,18 @@ Outputs:
     Value: !GetAtt S3Bucket.DomainName
 `;
   }
+
+  // Tags globais formatadas no final
+  const cfnGlobalTagsStr = [
+    `Env: ${environment}`,
+    `Project: ${projectPrefix || 'iac-generator'}`,
+    `ManagedBy: Cloudsmith`
+  ].concat(tags.map(t => `${t.key}: ${t.value}`)).join(', ');
+
+  code += `  GlobalTagsApplied:
+    Description: Lista de Tags Globais aplicadas nos recursos
+    Value: '${cfnGlobalTagsStr}'
+`;
 
   return code;
 }
