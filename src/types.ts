@@ -23,6 +23,7 @@ export interface ComputeConfig {
   enabled: boolean;
   instanceType: string;
   os: 'linux' | 'windows';
+  osVersion: string;
   allowSSH: boolean;
   allowHTTP: boolean;
 }

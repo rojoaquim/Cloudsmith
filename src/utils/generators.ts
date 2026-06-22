@@ -36,6 +36,83 @@ export function formatTags(tags: Tag[], tool: 'terraform' | 'cloudformation', pr
   }
 }
 
+export function getAwsAmiOwner(osVersion: string): string {
+  if (osVersion.startsWith('ubuntu')) return '"099720109477"'; // Canonical
+  if (osVersion.startsWith('debian')) return '"136693071363"'; // Debian
+  if (osVersion.startsWith('rhel')) return '"309956199498"'; // RedHat
+  if (osVersion.startsWith('windows')) return '"801119661308"'; // Microsoft
+  return '"137112412989"'; // Amazon
+}
+
+export function getAwsAmiFilter(osVersion: string): string {
+  switch (osVersion) {
+    case 'ubuntu-24.04': return '*ubuntu-noble-24.04-amd64-server-*';
+    case 'ubuntu-22.04': return '*ubuntu-jammy-22.04-amd64-server-*';
+    case 'debian-12': return '*debian-12-amd64-*';
+    case 'amazon-linux-2023': return 'al2023-ami-2023.*-kernel-6.1-x86_64';
+    case 'rhel-9': return '*RHEL-9.*_HVM-*';
+    case 'windows-2025': return 'Windows_Server-2025-English-Full-Base-*';
+    case 'windows-2022': return 'Windows_Server-2022-English-Full-Base-*';
+    case 'windows-2019': return 'Windows_Server-2019-English-Full-Base-*';
+    case 'windows-2016': return 'Windows_Server-2016-English-Full-Base-*';
+    default: return '*ubuntu-noble-24.04-amd64-server-*';
+  }
+}
+
+export function getAzureImageReference(osVersion: string): { publisher: string; offer: string; sku: string } {
+  switch (osVersion) {
+    case 'ubuntu-24.04':
+      return { publisher: 'Canonical', offer: 'ubuntu-24_04-lts', sku: 'server' };
+    case 'ubuntu-22.04':
+      return { publisher: 'Canonical', offer: 'ubuntu-22_04-lts', sku: 'server' };
+    case 'debian-12':
+      return { publisher: 'debian', offer: 'debian-12', sku: '12-gen2' };
+    case 'amazon-linux-2023': // Fallback to RHEL on Azure
+    case 'rhel-9':
+      return { publisher: 'RedHat', offer: 'RHEL', sku: '9-lvm-gen2' };
+    case 'windows-2025':
+      return { publisher: 'MicrosoftWindowsServer', offer: 'WindowsServer', sku: '2025-datacenter-azure-edition' };
+    case 'windows-2022':
+      return { publisher: 'MicrosoftWindowsServer', offer: 'WindowsServer', sku: '2022-datacenter-azure-edition' };
+    case 'windows-2019':
+      return { publisher: 'MicrosoftWindowsServer', offer: 'WindowsServer', sku: '2019-datacenter' };
+    case 'windows-2016':
+      return { publisher: 'MicrosoftWindowsServer', offer: 'WindowsServer', sku: '2016-datacenter' };
+    default:
+      return { publisher: 'Canonical', offer: 'ubuntu-24_04-lts', sku: 'server' };
+  }
+}
+
+export function getGcpImage(osVersion: string): string {
+  switch (osVersion) {
+    case 'ubuntu-24.04': return 'ubuntu-os-cloud/ubuntu-2404-lts-amd64';
+    case 'ubuntu-22.04': return 'ubuntu-os-cloud/ubuntu-2204-lts';
+    case 'debian-12': return 'debian-cloud/debian-12';
+    case 'amazon-linux-2023': return 'rocky-linux-cloud/rocky-linux-9'; // Fallback
+    case 'rhel-9': return 'rhel-cloud/rhel-9';
+    case 'windows-2025': return 'windows-cloud/windows-server-2025-byol';
+    case 'windows-2022': return 'windows-cloud/windows-server-2022-byol';
+    case 'windows-2019': return 'windows-cloud/windows-server-2019-byol';
+    case 'windows-2016': return 'windows-cloud/windows-server-2016-byol';
+    default: return 'debian-cloud/debian-12';
+  }
+}
+
+export function getCfnAmiId(osVersion: string): string {
+  switch (osVersion) {
+    case 'ubuntu-24.04': return 'ami-0e2c8caa4b6378d8c';
+    case 'ubuntu-22.04': return 'ami-080e1f13689e07408';
+    case 'debian-12': return 'ami-058bd2d568351da34';
+    case 'amazon-linux-2023': return 'ami-0c7217cdde317cfec';
+    case 'rhel-9': return 'ami-0165f76b4d373f842';
+    case 'windows-2025': return 'ami-0e0600d86940a02cf';
+    case 'windows-2022': return 'ami-0b92f7596b7fdccbd';
+    case 'windows-2019': return 'ami-04f7620eb5a55d496';
+    case 'windows-2016': return 'ami-09cf6e9e4b6d396ec';
+    default: return 'ami-0c7217cdde317cfec';
+  }
+}
+
 // Generate complete Terraform code
 export function generateTerraform(state: GeneratorState): string {
   const { provider, environment, projectPrefix, tags, resources } = state;
@@ -234,11 +311,11 @@ ${resources.compute.allowSSH ? `  ingress {
 
 data "aws_ami" "os" {
   most_recent = true
-  owners      = ["137112412989"] # Amazon official OS AMIs
+  owners      = [${getAwsAmiOwner(resources.compute.osVersion)}]
 
   filter {
     name   = "name"
-    values = [${resources.compute.os === 'linux' ? '"al2023-ami-2023.*-kernel-6.1-x86_64"' : '"Windows_Server-2022-English-Full-Base-*"'}]
+    values = ["${getAwsAmiFilter(resources.compute.osVersion)}"]
   }
 }
 
@@ -339,9 +416,9 @@ resource "azurerm_${resources.compute.os === 'linux' ? 'linux_virtual_machine' :
   }
 
   source_image_reference {
-    publisher = "${resources.compute.os === 'linux' ? 'Canonical' : 'MicrosoftWindowsServer'}"
-    offer     = "${resources.compute.os === 'linux' ? 'ubuntu-24_04-lts' : 'WindowsServer'}"
-    sku       = "${resources.compute.os === 'linux' ? 'server' : '2022-datacenter-azure-edition'}"
+    publisher = "${getAzureImageReference(resources.compute.osVersion).publisher}"
+    offer     = "${getAzureImageReference(resources.compute.osVersion).offer}"
+    sku       = "${getAzureImageReference(resources.compute.osVersion).sku}"
     version   = "latest"
   }
 }
@@ -354,7 +431,7 @@ resource "azurerm_${resources.compute.os === 'linux' ? 'linux_virtual_machine' :
 
   boot_disk {
     initialize_params {
-      image = "${resources.compute.os === 'linux' ? 'debian-cloud/debian-12' : 'windows-cloud/windows-server-2022-byol'}"
+      image = "${getGcpImage(resources.compute.osVersion)}"
       size  = ${resources.compute.os === 'linux' ? '30' : '70'}
     }
   }
@@ -749,7 +826,7 @@ Resources:
     Type: AWS::EC2::Instance
     Properties:
       InstanceType: ${resources.compute.instanceType}
-      ImageId: ${resources.compute.os === 'linux' ? 'ami-0c7217cdde317cfec' : 'ami-0b92f7596b7fdccbd'} # Amazon-Linux-2 ou Windows Server 2022 default no US-East-1
+      ImageId: ${getCfnAmiId(resources.compute.osVersion)} # ${resources.compute.osVersion} default no US-East-1
       SubnetId: ${resources.vpc.enabled ? '!Ref PublicSubnet' : '!Ref DefaultSubnetId'}
       SecurityGroupIds:
         - !Ref WebServerSecurityGroup

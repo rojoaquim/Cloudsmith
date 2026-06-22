@@ -24,7 +24,7 @@ import {
 
 import { GeneratorState, IaCTool, CloudProvider, Environment, Tag } from './types';
 import { generateTerraform, generateCloudFormation } from './utils/generators';
-import { iacCascadingSchema, providerInstanceTypes } from './utils/dynamicOptions';
+import { iacCascadingSchema, providerInstanceTypes, osVersionsData } from './utils/dynamicOptions';
 import TagManager from './components/TagManager';
 import DocTabs from './components/DocTabs';
 
@@ -69,6 +69,7 @@ const INITIAL_STATE: GeneratorState = {
       enabled: true,
       instanceType: 't3.micro',
       os: 'linux',
+      osVersion: 'ubuntu-22.04',
       allowSSH: true,
       allowHTTP: true
     },
@@ -520,21 +521,48 @@ Instruções do usuário: ${prompt || 'Forneça uma análise de segurança e opt
                           <label className="text-[10px] text-slate-500 block mb-1 uppercase tracking-wider">Sistema Operacional</label>
                           <select
                             value={state.resources.compute.os}
-                            onChange={(e) =>
+                            onChange={(e) => {
+                              const newOs = e.target.value as 'linux' | 'windows';
+                              const defaultVersion = newOs === 'linux' ? 'ubuntu-22.04' : 'windows-2022';
                               setState((prev) => ({
                                 ...prev,
                                 resources: {
                                   ...prev.resources,
-                                  compute: { ...prev.resources.compute, os: e.target.value as 'linux' | 'windows' }
+                                  compute: {
+                                    ...prev.resources.compute,
+                                    os: newOs,
+                                    osVersion: defaultVersion
+                                  }
                                 }
-                              }))
-                            }
+                              }));
+                            }}
                             className="w-full text-xs px-2 py-1.5 bg-[#161B22] border border-[#2D333B] rounded text-[#E0E2E7] focus:border-blue-500 font-mono"
                           >
                             <option value="linux">Linux Server</option>
                             <option value="windows">Windows Server</option>
                           </select>
                         </div>
+                      </div>
+
+                      <div>
+                        <label className="text-[10px] text-slate-500 block mb-1 uppercase tracking-wider">Versão do Sistema Operacional</label>
+                        <select
+                          value={state.resources.compute.osVersion}
+                          onChange={(e) =>
+                            setState((prev) => ({
+                              ...prev,
+                              resources: {
+                                ...prev.resources,
+                                compute: { ...prev.resources.compute, osVersion: e.target.value }
+                              }
+                            }))
+                          }
+                          className="w-full text-xs px-2 py-1.5 bg-[#161B22] border border-[#2D333B] rounded text-[#E0E2E7] focus:border-blue-500 font-mono"
+                        >
+                          {(osVersionsData[state.resources.compute.os] || []).map((ver) => (
+                            <option key={ver.id} value={ver.id}>{ver.name}</option>
+                          ))}
+                        </select>
                       </div>
 
                       <div className="flex gap-4 pt-1">

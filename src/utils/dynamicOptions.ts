@@ -12,6 +12,27 @@ export const providerInstanceTypes: Record<string, string[]> = {
   oci: ['VM.Standard.E4.Flex', 'VM.Standard.E3.Flex', 'VM.Standard2.1', 'VM.Standard2.2']
 };
 
+export interface OsVersionOption {
+  id: string;
+  name: string;
+}
+
+export const osVersionsData: Record<'linux' | 'windows', OsVersionOption[]> = {
+  linux: [
+    { id: 'ubuntu-24.04', name: 'Ubuntu Server 24.04 LTS' },
+    { id: 'ubuntu-22.04', name: 'Ubuntu Server 22.04 LTS' },
+    { id: 'debian-12', name: 'Debian 12 Bookworm' },
+    { id: 'amazon-linux-2023', name: 'Amazon Linux 2023' },
+    { id: 'rhel-9', name: 'Red Hat Enterprise Linux 9' }
+  ],
+  windows: [
+    { id: 'windows-2025', name: 'Windows Server 2025 Datacenter' },
+    { id: 'windows-2022', name: 'Windows Server 2022 Datacenter' },
+    { id: 'windows-2019', name: 'Windows Server 2019 Datacenter' },
+    { id: 'windows-2016', name: 'Windows Server 2016 Datacenter' }
+  ]
+};
+
 export const iacCascadingSchema: CascadingOptions[] = [
   {
     tool: 'terraform',
