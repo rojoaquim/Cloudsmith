@@ -78,6 +78,17 @@ export default function App() {
   const [aiLoading, setAiLoading] = useState<boolean>(false);
   const [aiError, setAiError] = useState<string>('');
   const [hasServerKey, setHasServerKey] = useState<boolean>(false);
+  const [clientApiKey, setClientApiKey] = useState<string>(() => localStorage.getItem('CLOUDSMITH_GEMINI_API_KEY') || '');
+
+  // Synchronize client API key to localStorage
+  useEffect(() => {
+    if (clientApiKey) {
+      localStorage.setItem('CLOUDSMITH_GEMINI_API_KEY', clientApiKey);
+    } else {
+      localStorage.removeItem('CLOUDSMITH_GEMINI_API_KEY');
+    }
+  }, [clientApiKey]);
+
 
   // Check if server has Gemini API Key initialized
   useEffect(() => {
@@ -188,23 +199,85 @@ export default function App() {
     setAiResult('');
 
     try {
-      const response = await fetch('/api/refine-iac', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          code: generatedCode,
-          tool: state.tool,
-          provider: state.provider,
-          prompt: aiPrompt
-        })
-      });
+      if (hasServerKey) {
+        const response = await fetch('/api/refine-iac', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            code: generatedCode,
+            tool: state.tool,
+            provider: state.provider,
+            prompt: aiPrompt
+          })
+        });
 
-      const data = await response.json();
-      if (!response.ok) {
-        throw new Error(data.error || 'Falha ao conectar com o serviço de SRE.');
+        const data = await response.json();
+        if (!response.ok) {
+          throw new Error(data.error || 'Falha ao conectar com o serviço de SRE.');
+        }
+
+        setAiResult(data.result);
+      } else {
+        const keyToUse = clientApiKey || localStorage.getItem('CLOUDSMITH_GEMINI_API_KEY');
+        if (!keyToUse) {
+          throw new Error('Nenhuma chave de API do Gemini configurada. Por favor, insira a sua chave do Gemini abaixo.');
+        }
+
+        const provider = state.provider;
+        const tool = state.tool;
+        const code = generatedCode;
+        const prompt = aiPrompt;
+
+        const systemInstruction = `Você é um Engenheiro de Software Sênior, Especialista de Cloud e SRE de nível mundial.
+Especializado em Infraestrutura como Código (Terraform e AWS CloudFormation).
+Seu objetivo é analisar, otimizar, explicar ou refinar o código IaC enviado pelo usuário de acordo com as instruções dele.
+
+Regras estritas:
+1. Retorne APENAS o código de infraestrutura ajustado se solicitado, ou uma resposta explicativa clara com trechos de código formatados em Markdown.
+2. Siga as melhores práticas da plataforma de destino (${provider ? provider.toUpperCase() : 'Nuvem'}).
+3. Sempre inclua comentários de melhores práticas de segurança (ex: portas restritas no Security Group, criptografia ativada, bloqueio de acesso público).`;
+
+        const userMessage = `Código original (${tool}):
+\`\`\`${tool === 'terraform' ? 'hcl' : 'yaml'}
+${code}
+\`\`\`
+
+Instruções do usuário: ${prompt || 'Forneça uma análise de segurança e optimize este código se necessário.'}`;
+
+        const response = await fetch(
+          `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${keyToUse}`,
+          {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+              contents: [
+                {
+                  role: 'user',
+                  parts: [{ text: userMessage }]
+                }
+              ],
+              systemInstruction: {
+                parts: [{ text: systemInstruction }]
+              },
+              generationConfig: {
+                temperature: 0.2
+              }
+            })
+          }
+        );
+
+        if (!response.ok) {
+          const errorData = await response.json().catch(() => ({}));
+          const errorMessage = errorData.error?.message || `HTTP ${response.status} ${response.statusText}`;
+          throw new Error(`Erro na API do Gemini: ${errorMessage}`);
+        }
+
+        const data = await response.json();
+        const refinedText = data.candidates?.[0]?.content?.parts?.[0]?.text || 'Nenhuma resposta recebida da IA.';
+        setAiResult(refinedText);
       }
-
-      setAiResult(data.result);
     } catch (err: any) {
       setAiError(err.message || 'Houve um erro no processamento da IA.');
     } finally {
@@ -830,9 +903,11 @@ export default function App() {
                   <span className={`text-[9px] px-2 py-0.5 rounded font-mono border ${
                     hasServerKey 
                       ? 'bg-blue-500/10 text-blue-400 border-blue-500/20' 
-                      : 'bg-zinc-800 text-zinc-500 border-zinc-700/60'
+                      : clientApiKey
+                        ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20'
+                        : 'bg-zinc-800 text-zinc-500 border-zinc-700/60'
                   }`}>
-                    {hasServerKey ? 'ATIVADO via Server' : 'Sem Conexão / Local'}
+                    {hasServerKey ? 'ATIVADO via Server' : clientApiKey ? 'ATIVADO via Local' : 'Sem Conexão / Local'}
                   </span>
                 </div>
 
@@ -895,10 +970,32 @@ export default function App() {
                     </div>
                   )}
 
-                  {!hasServerKey && !aiError && !aiResult && (
-                    <div className="bg-[#161B22]/50 border border-[#2D333B] text-[11px] text-slate-500 px-3 py-2 rounded-lg flex items-center gap-2" id="ai-offline-info">
-                      <span className="w-1.5 h-1.5 rounded-full bg-slate-600"></span>
-                      <span>Configure a chave <strong>GEMINI_API_KEY</strong> para ativar o assistente de arquitetura IA.</span>
+                  {!hasServerKey && (
+                    <div className="bg-[#161B22]/50 border border-[#2D333B] p-3 rounded-lg space-y-2 text-[11px]" id="ai-offline-info">
+                      <div className="flex items-center gap-2 text-slate-400 font-medium">
+                        <Settings className="w-3.5 h-3.5" />
+                        <span>Configuração da API Key (GitHub Pages / Local)</span>
+                      </div>
+                      <p className="text-slate-500 leading-normal">
+                        Para usar o assistente sem um servidor backend, insira sua chave do Gemini abaixo (salva localmente no seu navegador):
+                      </p>
+                      <div className="flex gap-2">
+                        <input
+                          type="password"
+                          value={clientApiKey}
+                          onChange={(e) => setClientApiKey(e.target.value)}
+                          placeholder="Cole sua API Key do Gemini aqui..."
+                          className="flex-1 text-[11px] px-2.5 py-1.5 bg-[#0D1117] border border-[#2D333B] rounded text-zinc-100 placeholder-zinc-650 focus:outline-none focus:border-blue-500 font-mono"
+                        />
+                        {clientApiKey && (
+                          <button
+                            onClick={() => setClientApiKey('')}
+                            className="text-zinc-400 hover:text-zinc-200 px-2 py-1 text-[10px] border border-[#2D333B] rounded hover:bg-zinc-800"
+                          >
+                            Limpar
+                          </button>
+                        )}
+                      </div>
                     </div>
                   )}
                 </div>
