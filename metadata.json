@@ -1,0 +1,6 @@
+{
+  "name": "Gerador de IaC (Infrastructure as Code)",
+  "description": "Uma plataforma interativa e inteligente para projetar, visualizar, refinar e exportar infraestrutura como código (Terraform e AWS CloudFormation) com as melhores práticas de SRE.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
