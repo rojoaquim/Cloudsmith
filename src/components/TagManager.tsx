@@ -44,10 +44,6 @@ export default function TagManager({ tags, onChange }: TagManagerProps) {
 
   return (
     <div className="space-y-4" id="tag-manager-container">
-      <div className="flex items-center gap-2 mb-2">
-        <TagIcon className="w-4 h-4 text-blue-400" />
-        <h4 className="text-xs uppercase tracking-wider font-semibold text-slate-400">03. Tags Globais (Chave/Valor)</h4>
-      </div>
 
       <form onSubmit={handleAddTag} className="grid grid-cols-1 sm:grid-cols-2 gap-2">
         <div>

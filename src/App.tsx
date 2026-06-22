@@ -431,9 +431,37 @@ Instruções do usuário: ${prompt || 'Forneça uma análise de segurança e opt
                 <div className="flex items-center justify-between border-b border-[#2D333B] pb-3">
                   <div className="flex items-center gap-2">
                     <Settings className="w-4 h-4 text-blue-400" />
-                    <h3 className="text-xs uppercase tracking-wider text-slate-400 font-bold italic">02. Recurso Config</h3>
+                    <h3 className="text-xs uppercase tracking-wider text-slate-400 font-bold italic">02. Configuração do recurso</h3>
                   </div>
                   <span className="px-2 py-0.5 rounded bg-green-500/10 text-green-400 text-[10px] border border-green-500/20 uppercase font-mono">Pronto</span>
+                </div>
+
+                {/* Projeto & Ambiente Globais na mesma janela */}
+                <div className="grid grid-cols-2 gap-3 pb-3 border-b border-[#2D333B]">
+                  <div>
+                    <label className="text-[10px] text-slate-500 block mb-1 uppercase tracking-wider font-semibold">Prefixo do Projeto</label>
+                    <input
+                      type="text"
+                      placeholder="enterprise"
+                      value={state.projectPrefix}
+                      onChange={(e) => setState((prev) => ({ ...prev, projectPrefix: e.target.value }))}
+                      className="w-full text-xs px-3 py-1.5 bg-[#161B22] border border-[#2D333B] rounded text-[#E0E2E7] focus:outline-none focus:border-blue-500 font-mono"
+                      id="input-project-prefix"
+                    />
+                  </div>
+                  <div>
+                    <label className="text-[10px] text-slate-500 block mb-1 uppercase tracking-wider font-semibold">Ambiente</label>
+                    <select
+                      value={state.environment}
+                      onChange={(e) => setState((prev) => ({ ...prev, environment: e.target.value as Environment }))}
+                      className="w-full text-xs px-3 py-1.5 bg-[#161B22] border border-[#2D333B] rounded text-[#E0E2E7] focus:outline-none focus:border-blue-500 font-mono"
+                      id="select-environment"
+                    >
+                      <option value="dev">Dev (Desenvolvimento)</option>
+                      <option value="qa">QA (Homologação)</option>
+                      <option value="prod">Prod (Produção)</option>
+                    </select>
+                  </div>
                 </div>
 
                 {/* Resource 1: Compute */}
@@ -809,37 +837,11 @@ Instruções do usuário: ${prompt || 'Forneça uma análise de segurança e opt
               </div>
 
               {/* Card 3: Global Standards (Prefix, Environment, Tags) */}
+              {/* Card 3: Global Tags */}
               <div className="bg-[#0D1117] border border-[#2D333B] p-5 rounded-xl space-y-4" id="step-globals">
                 <div className="flex items-center gap-2 border-b border-[#2D333B] pb-3">
                   <Sliders className="w-4 h-4 text-blue-400" />
-                  <h3 className="text-xs uppercase tracking-wider text-slate-400 font-bold italic">02. Padrões Globais</h3>
-                </div>
-
-                <div className="grid grid-cols-2 gap-3">
-                  <div>
-                    <label className="text-[11px] text-slate-500 block mb-1 uppercase tracking-wider font-semibold">Prefixo do Projeto</label>
-                    <input
-                      type="text"
-                      placeholder="enterprise"
-                      value={state.projectPrefix}
-                      onChange={(e) => setState((prev) => ({ ...prev, projectPrefix: e.target.value }))}
-                      className="w-full text-xs px-3 py-2 bg-[#161B22] border border-[#2D333B] rounded text-[#E0E2E7] focus:outline-none focus:border-blue-500 font-mono"
-                      id="input-project-prefix"
-                    />
-                  </div>
-                  <div>
-                    <label className="text-[11px] text-slate-500 block mb-1 uppercase tracking-wider font-semibold">Ambiente</label>
-                    <select
-                      value={state.environment}
-                      onChange={(e) => setState((prev) => ({ ...prev, environment: e.target.value as Environment }))}
-                      className="w-full text-xs px-3 py-2 bg-[#161B22] border border-[#2D333B] rounded text-[#E0E2E7] focus:outline-none focus:border-blue-500 font-mono"
-                      id="select-environment"
-                    >
-                      <option value="dev">Dev (Desenvolvimento)</option>
-                      <option value="qa">QA (Homologação)</option>
-                      <option value="prod">Prod (Produção)</option>
-                    </select>
-                  </div>
+                  <h3 className="text-xs uppercase tracking-wider text-slate-400 font-bold italic">03. Tags Globais</h3>
                 </div>
 
                 {/* Tags custom block */}
@@ -885,7 +887,7 @@ Instruções do usuário: ${prompt || 'Forneça uma análise de segurança e opt
                 </div>
 
                 {/* Custom formatted highlighted display pane */}
-                <div className="bg-[#010409] p-4 font-mono text-[11px] leading-relaxed overflow-auto flex-1 min-h-[450px] border border-[#2D333B]/30 rounded">
+                <div className="bg-[#010409] p-4 font-mono text-[11px] leading-relaxed overflow-auto flex-1 min-h-[400px] max-h-[600px] border border-[#2D333B]/30 rounded">
                   <pre className="text-blue-300">
                     <code>{generatedCode}</code>
                   </pre>
