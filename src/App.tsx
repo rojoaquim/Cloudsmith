@@ -885,7 +885,7 @@ Instruções do usuário: ${prompt || 'Forneça uma análise de segurança e opt
                 </div>
 
                 {/* Custom formatted highlighted display pane */}
-                <div className="bg-[#010409] p-4 font-mono text-[11px] leading-relaxed overflow-auto flex-1 min-h-[360px] max-h-[500px] border border-[#2D333B]/30 rounded">
+                <div className="bg-[#010409] p-4 font-mono text-[11px] leading-relaxed overflow-auto flex-1 min-h-[450px] border border-[#2D333B]/30 rounded">
                   <pre className="text-blue-300">
                     <code>{generatedCode}</code>
                   </pre>
