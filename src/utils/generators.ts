@@ -125,7 +125,7 @@ export function generateTerraform(state: GeneratorState): string {
   let code = `# ==============================================================================
 # TEMPLATE DE INFRAESTRUTURA COMO CODIGO (IAC) - TERRAFORM
 # Provedor: ${provider.toUpperCase()} | Ambiente: ${environment.toUpperCase()}
-# Gerado Automaticamente - Gerador SRE IaC
+# Gerado Automaticamente - Cloudsmith
 # ==============================================================================
 
 # Definições Locais e Variáveis de Configuração Globais
@@ -691,7 +691,7 @@ resource "aws_db_instance" "db" {
 # OUTPUTS E META-TAGS ADICIONADAS
 # ==========================================
 output "custom_tags_applied" {
-  description = "Lista de Tags customizadas configuradas pelo Gerador"
+  description = "Lista de Tags customizadas configuradas pelo Cloudsmith"
   value       = {
 ${tags.map((t) => `    "${t.key}" = "${t.value}"`).join('\n')}
   }
@@ -708,10 +708,10 @@ export function generateCloudFormation(state: GeneratorState): string {
   const prefix = projectPrefix ? `${projectPrefix}-${environment}` : environment;
 
   let code = `AWSTemplateFormatVersion: '2010-09-09'
-Description: 'IaC CloudFormation gerado pelo Gerador SRE para o ambiente de ${environment.toUpperCase()}'
+Description: 'IaC CloudFormation gerado pelo Cloudsmith para o ambiente de ${environment.toUpperCase()}'
 
 Metadata:
-  Generator: IaCGenerator SRE Suite v1.0
+  Generator: Cloudsmith SRE Suite v1.0
   Environment: ${environment}
 
 # ==============================================================================

@@ -106,7 +106,7 @@ async function setupVite() {
   }
 
   app.listen(PORT, '0.0.0.0', () => {
-    console.log(`[IaC Generator Server] Running on http://0.0.0.0:${PORT}`);
+    console.log(`[Cloudsmith Server] Running on http://0.0.0.0:${PORT}`);
   });
 }
 

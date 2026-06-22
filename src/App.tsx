@@ -30,7 +30,7 @@ import DocTabs from './components/DocTabs';
 
 const INITIAL_STATE: GeneratorState = {
   tool: 'terraform',
-  provider: 'aws',
+  provider: 'azure',
   environment: 'dev',
   projectPrefix: 'enterprise',
   tags: [
@@ -61,13 +61,13 @@ const INITIAL_STATE: GeneratorState = {
   resources: {
     vpc: {
       enabled: true,
-      cidr: '10.0.0.0/16',
-      subnetsCount: 2,
+      cidr: '10.1.0.0/16',
+      subnetsCount: 1,
       enableDns: true
     },
     compute: {
       enabled: true,
-      instanceType: 't3.micro',
+      instanceType: 'Standard_B1s',
       os: 'linux',
       osVersion: 'ubuntu-22.04',
       allowSSH: true,
@@ -76,13 +76,13 @@ const INITIAL_STATE: GeneratorState = {
     storage: {
       enabled: false,
       bucketType: 'private',
-      versioning: true,
+      versioning: false,
       encryption: true
     },
     database: {
       enabled: false,
       engine: 'postgres',
-      allocatedStorage: 20,
+      allocatedStorage: 32,
       multiAz: false
     }
   }
@@ -354,7 +354,7 @@ Instruções do usuário: ${prompt || 'Forneça uma análise de segurança e opt
             <div className="p-5 bg-[#0D1117] rounded-xl border border-[#2D333B] space-y-2">
               <h3 className="text-md font-semibold text-white">Especificações recomendadas de Arquitetura</h3>
               <p className="text-xs text-slate-400 leading-relaxed max-w-3xl">
-                O Gerador de IaC Pro foi estruturado para resolver o gerenciamento dinâmico em cascata no lado do cliente,
+                O Cloudsmith foi estruturado para resolver o gerenciamento dinâmico em cascata no lado do cliente,
                 garantindo que qualquer alteração de ferramenta de IaC ou provedor seja atualizada de forma segura.
                 Veja abaixo a proposta de arquitetura de pastas sugerida e as estruturas de mapeamento recomendadas.
               </p>
@@ -993,7 +993,7 @@ Instruções do usuário: ${prompt || 'Forneça uma análise de segurança e opt
                       <div className="space-y-1">
                         <strong className="block">Aviso do Copilot:</strong>
                         <p className="text-[11px]">
-                          {aiError}. Isso ocorre quando a chave de API <strong>GEMINI_API_KEY</strong> não está configurada nos segredos ou houve falha de rede. Você ainda pode usar o gerador padrão local perfeitamente!
+                          {aiError}. Isso ocorre quando a chave de API <strong>GEMINI_API_KEY</strong> não está configurada nos segredos ou houve falha de rede. Você ainda pode usar o Cloudsmith local perfeitamente!
                         </p>
                       </div>
                     </div>
