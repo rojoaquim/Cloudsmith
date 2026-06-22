@@ -218,10 +218,10 @@ export default function App() {
       <header className="h-14 border-b border-[#2D333B] px-6 flex items-center justify-between bg-[#161B22] sticky top-0 z-40" id="main-header">
         <div className="flex items-center gap-4">
           <div className="w-8 h-8 bg-blue-600 rounded flex items-center justify-center">
-            <span className="text-white font-bold">I</span>
+            <span className="text-white font-bold">C</span>
           </div>
           <h1 className="text-md font-semibold tracking-tight text-[#E0E2E7]">
-            ForgeCloud <span className="text-blue-400 text-xs font-mono ml-2">v2.4.0</span>
+            Cloudsmith <span className="text-blue-400 text-xs font-mono ml-2">v0.0.1</span>
           </h1>
         </div>
         <div className="flex items-center gap-4">

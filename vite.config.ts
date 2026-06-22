@@ -5,6 +5,7 @@ import {defineConfig} from 'vite';
 
 export default defineConfig(() => {
   return {
+    base: process.env.NODE_ENV === 'production' ? '/cloudsmith/' : '/',
     plugins: [react(), tailwindcss()],
     resolve: {
       alias: {
